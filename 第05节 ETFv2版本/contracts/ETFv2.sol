@@ -9,7 +9,7 @@ import {SafeERC20} from "@openzeppelin/contracts@5.1.0/token/ERC20/utils/SafeERC
 import {IERC20} from "@openzeppelin/contracts@5.1.0/token/ERC20/IERC20.sol";
 import {IV3SwapRouter} from "./interfaces/IV3SwapRouter.sol";
 
-contract ETFv2 is IETFv2, ETFv1 {
+contract ETFv2 is IETFv2, ETFv1 {//ETFv2继承自IETFv2，ETFv1
     using SafeERC20 for IERC20;
     using Path for bytes;
 
