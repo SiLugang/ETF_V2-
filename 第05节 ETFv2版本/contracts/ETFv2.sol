@@ -34,7 +34,7 @@ contract ETFv2 is IETFv2, ETFv1 {//ETFv2继承自IETFv2，ETFv1
     function investWithETH(//用ETH进行invest的实现逻辑
         address to,
         uint256 mintAmount,
-        bytes[] memory swapPaths
+        bytes[] memory swapPaths//**swapPaths怎么算，怎么得来的？---ETFQuoter，前端要怎么查询这个数
     ) external payable {
         address[] memory tokens = getTokens();//传入tokens的地址数组
         if (tokens.length != swapPaths.length) revert InvalidArrayLength();//交易路径的长度必须相同，否则revert报错
@@ -76,8 +76,8 @@ contract ETFv2 is IETFv2, ETFv1 {//ETFv2继承自IETFv2，ETFv1
         address srcToken,
         address to,
         uint256 mintAmount,
-        uint256 maxSrcTokenAmount,
-        bytes[] memory swapPaths
+        uint256 maxSrcTokenAmount,//**整个怎么算，怎么得来的？---ETFQuoter，前端要怎么查询这个数
+        bytes[] memory swapPaths//**前端交互时，怎么得到他们？---ETFQuoter，前端要怎么查询这个数
     ) external {
         address[] memory tokens = getTokens();//和eth一样，传入tokens的地址数组
         if (tokens.length != swapPaths.length) revert InvalidArrayLength();//和eth一样，交易路径的长度必须相同，否则revert报错
