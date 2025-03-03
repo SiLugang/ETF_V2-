@@ -23,7 +23,7 @@ contract ETFQuoter is IETFQuoter {
         fees = [100, 500, 3000, 10000];//费率分别是，
     }
 
-    function quoteInvestWithToken(
+    function quoteInvestWithToken(//实现逻辑：
         address etf,
         address srcToken,
         uint256 mintAmount
@@ -33,7 +33,7 @@ contract ETFQuoter is IETFQuoter {
         override
         returns (uint256 srcAmount, bytes[] memory swapPaths)
     {
-        address[] memory tokens = IETFv1(etf).getTokens();
+        address[] memory tokens = IETFv1(etf).getTokens();//
         uint256[] memory tokenAmounts = IETFv1(etf).getInvestTokenAmounts(
             mintAmount
         );
