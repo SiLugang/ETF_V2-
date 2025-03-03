@@ -10,17 +10,17 @@ import {IERC20} from "@openzeppelin/contracts@5.1.0/token/ERC20/IERC20.sol";
 contract ETFQuoter is IETFQuoter {
     using FullMath for uint256;
 
-    uint24[4] public fees;
-    address public immutable weth;
-    address public immutable usdc;
+    uint24[4] public fees;//遍历的数组，和uniV3一样的费率
+    address public immutable weth;//作为路径的两个中间代币？
+    address public immutable usdc;//作为路径的两个中间代币？
 
-    IUniswapV3Quoter public immutable uniswapV3Quoter;
+    IUniswapV3Quoter public immutable uniswapV3Quoter;//会用到V3的Quoter
 
-    constructor(address uniswapV3Quoter_, address weth_, address usdc_) {
+    constructor(address uniswapV3Quoter_, address weth_, address usdc_) {//函数，进行初始化
         uniswapV3Quoter = IUniswapV3Quoter(uniswapV3Quoter_);
         weth = weth_;
         usdc = usdc_;
-        fees = [100, 500, 3000, 10000];
+        fees = [100, 500, 3000, 10000];//费率分别是，
     }
 
     function quoteInvestWithToken(
