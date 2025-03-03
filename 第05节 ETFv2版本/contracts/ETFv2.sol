@@ -79,26 +79,26 @@ contract ETFv2 is IETFv2, ETFv1 {//ETFv2继承自IETFv2，ETFv1
         uint256 maxSrcTokenAmount,
         bytes[] memory swapPaths
     ) external {
-        address[] memory tokens = getTokens();
-        if (tokens.length != swapPaths.length) revert InvalidArrayLength();
-        uint256[] memory tokenAmounts = getInvestTokenAmounts(mintAmount);
+        address[] memory tokens = getTokens();//和eth一样，传入tokens的地址数组
+        if (tokens.length != swapPaths.length) revert InvalidArrayLength();//和eth一样，交易路径的长度必须相同，否则revert报错
+        uint256[] memory tokenAmounts = getInvestTokenAmounts(mintAmount);//和eth一样，算出每个代币需要投入多少
 
-        IERC20(srcToken).safeTransferFrom(
-            msg.sender,
-            address(this),
-            maxSrcTokenAmount
+        IERC20(srcToken).safeTransferFrom(//用于转移
+            msg.sender,//用户代币
+            address(this),//转到当前地址
+            maxSrcTokenAmount//代币数量？
         );
-        _approveToSwapRouter(srcToken);//对每个代币，授权操作只需进行1次，函数逻辑在196行
+        _approveToSwapRouter(srcToken);//对每个代币，授权操作只需进行1次，函数逻辑在196行，括号里是当前代币
 
-        uint256 totalPaid;//实际总共支付的ETH会记录下来
+        uint256 totalPaid;//实际总共支付的token会记录下来
         for (uint256 i = 0; i < tokens.length; i++) {//对每个代币循环
             if (tokenAmounts[i] == 0) continue;//如果tokenAmount（下面展示的代币）=0，说明不需要做swap，会直接返回
             if (!_checkSwapPath(tokens[i], srcToken, swapPaths[i]))//检查path是否合法，checkSwappath（）函数：206行
                 revert InvalidSwapPath(swapPaths[i]);//不合法时报错
-            if (tokens[i] == srcToken) {
-                totalPaid += tokenAmounts[i];
+            if (tokens[i] == srcToken) {//link一样的情况下，不需要swap
+                totalPaid += tokenAmounts[i];//
             } else {
-                totalPaid += IV3SwapRouter(swapRouter).exactOutput(
+                totalPaid += IV3SwapRouter(swapRouter).exactOutput(//算出totalpaid
                     IV3SwapRouter.ExactOutputParams({
                         path: swapPaths[i],
                         recipient: address(this),
@@ -109,53 +109,53 @@ contract ETFv2 is IETFv2, ETFv1 {//ETFv2继承自IETFv2，ETFv1
             }
         }
 
-        uint256 leftAfterPaid = maxSrcTokenAmount - totalPaid;
-        IERC20(srcToken).safeTransfer(msg.sender, leftAfterPaid);
+        uint256 leftAfterPaid = maxSrcTokenAmount - totalPaid;//算出剩余的
+        IERC20(srcToken).safeTransfer(msg.sender, leftAfterPaid);//返回给用户
 
-        _invest(to, mintAmount);
+        _invest(to, mintAmount);//etfv1版本中的invest底层操作
 
-        emit InvestedWithToken(srcToken, to, mintAmount, totalPaid);
+        emit InvestedWithToken(srcToken, to, mintAmount, totalPaid);//抛出事件（代币，地址，mint，总支付）
     }
 
-    function redeemToETH(
+    function redeemToETH(//赎回成ETH
         address to,
         uint256 burnAmount,
         uint256 minETHAmount,
         bytes[] memory swapPaths
     ) external {
-        address[] memory tokens = getTokens();
-        if (tokens.length != swapPaths.length) revert InvalidArrayLength();
+        address[] memory tokens = getTokens();//拿到整个tokens？
+        if (tokens.length != swapPaths.length) revert InvalidArrayLength();//判断路径，path长度的合法性
 
-        uint256[] memory tokenAmounts = _redeem(address(this), burnAmount);
+        uint256[] memory tokenAmounts = _redeem(address(this), burnAmount);//redeem代币，在当前合约地址里；需要给它swap成ETH发给用户
 
-        uint256 totalReceived;
-        for (uint256 i = 0; i < tokens.length; i++) {
-            if (tokenAmounts[i] == 0) continue;
-            if (!_checkSwapPath(tokens[i], weth, swapPaths[i]))//path里第一个是input，第二个是output，
-                revert InvalidSwapPath(swapPaths[i]);
-            if (tokens[i] == weth) {
-                totalReceived += tokenAmounts[i];
-            } else {
-                _approveToSwapRouter(tokens[i]);
-                totalReceived += IV3SwapRouter(swapRouter).exactInput(//执行input时，path里第一个是input，第二个是output，和exactinput刚好相反，
-                    IV3SwapRouter.ExactInputParams({
-                        path: swapPaths[i],
-                        recipient: address(this),
-                        amountIn: tokenAmounts[i],
+        uint256 totalReceived;//计算总共接收了多少ETH
+        for (uint256 i = 0; i < tokens.length; i++) {//遍历
+            if (tokenAmounts[i] == 0) continue;//=0时退出，不需要swap
+            if (!_checkSwapPath(tokens[i], weth, swapPaths[i]))//tokens[i]是input，weth是output；把tokens[i]换成WETH
+                revert InvalidSwapPath(swapPaths[i]);//做check，有问题时报错
+            if (tokens[i] == weth) {//该token是weth的话，不需要swap
+                totalReceived += tokenAmounts[i];//接收ETH的数量
+            } else {//此外其他tokens，
+                _approveToSwapRouter(tokens[i]);//先做一个approve操作
+                totalReceived += IV3SwapRouter(swapRouter).exactInput(//执行exactinput时，path里第一个是input，第二个是output，和exactinput刚好相反；通过V3swap，在这里是WETH
+                    IV3SwapRouter.ExactInputParams({传递下面的参数
+                        path: swapPaths[i],//路径path
+                        recipient: address(this),//地址当前合约的地址？
+                        amountIn: tokenAmounts[i],//
                         amountOutMinimum: 1
                     })
                 );
             }
-        }
+        }//此时我们知道总共接收了多少ETH
 
-        if (totalReceived < minETHAmount) revert OverSlippage();
-        IWETH(weth).withdraw(totalReceived);
-        _safeTransferETH(to, totalReceived);
+        if (totalReceived < minETHAmount) revert OverSlippage();//判断，如果总接收的ETH小于用户设置的最小的赎回redeem的值？则报错
+        IWETH(weth).withdraw(totalReceived);//weth转成ETH
+        _safeTransferETH(to, totalReceived);//发给用户
 
-        emit RedeemedToETH(to, burnAmount, totalReceived);
+        emit RedeemedToETH(to, burnAmount, totalReceived);//触发redeem事件
     }
 
-    function redeemToToken(
+    function redeemToToken(//赎回成其他token，
         address dstToken,
         address to,
         uint256 burnAmount,
@@ -167,20 +167,20 @@ contract ETFv2 is IETFv2, ETFv1 {//ETFv2继承自IETFv2，ETFv1
 
         uint256[] memory tokenAmounts = _redeem(address(this), burnAmount);
 
-        uint256 totalReceived;
-        for (uint256 i = 0; i < tokens.length; i++) {
+        uint256 totalReceived;//其他代币的接收总量
+        for (uint256 i = 0; i < tokens.length; i++) {//遍历
             if (tokenAmounts[i] == 0) continue;
-            if (!_checkSwapPath(tokens[i], dstToken, swapPaths[i]))
+            if (!_checkSwapPath(tokens[i], dstToken, swapPaths[i]))检查路径
                 revert InvalidSwapPath(swapPaths[i]);
-            if (tokens[i] == dstToken) {
-                IERC20(tokens[i]).safeTransfer(to, tokenAmounts[i]);
-                totalReceived += tokenAmounts[i];
-            } else {
-                _approveToSwapRouter(tokens[i]);
+            if (tokens[i] == dstToken) {//如果两个代币一样
+                IERC20(tokens[i]).safeTransfer(to, tokenAmounts[i]);//ERC20代币直接转给用户
+                totalReceived += tokenAmounts[i];//+到totalreceived
+            } else {//其他代币
+                _approveToSwapRouter(tokens[i]);//approve
                 totalReceived += IV3SwapRouter(swapRouter).exactInput(
                     IV3SwapRouter.ExactInputParams({
                         path: swapPaths[i],
-                        recipient: to,
+                        recipient: to,//为什么是地址互换？币直接打给用户
                         amountIn: tokenAmounts[i],
                         amountOutMinimum: 1
                     })
@@ -188,9 +188,9 @@ contract ETFv2 is IETFv2, ETFv1 {//ETFv2继承自IETFv2，ETFv1
             }
         }
 
-        if (totalReceived < minDstTokenAmount) revert OverSlippage();
+        if (totalReceived < minDstTokenAmount) revert OverSlippage();//小于用户设置的赎回值？则报错
 
-        emit RedeemedToToken(dstToken, to, burnAmount, totalReceived);
+        emit RedeemedToToken(dstToken, to, burnAmount, totalReceived);//发送事件
     }
 
     function _approveToSwapRouter(address token) internal {//approve的逻辑：用完之后授权额度就不会变了
