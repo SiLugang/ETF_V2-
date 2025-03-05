@@ -42,8 +42,8 @@ contract ETFv2Script is Script {
         ];
 
         minMintAmount = 1e18;
-        swapRouter = 0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E;
-        weth9 = 0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14;
+        swapRouter = 0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E;//sepolia的swapRouter的地址
+        weth9 = 0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14;//weth的合约地址
 
         feeTo = 0x1956b2c4C511FDDd9443f50b36C4597D10cD9985;
         investFee = 1000; // 0.1%
@@ -54,7 +54,7 @@ contract ETFv2Script is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        ETFv2 etf = new ETFv2(
+        ETFv2 etf = new ETFv2(//去new，去部署
             name,
             symbol,
             tokens,
