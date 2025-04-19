@@ -138,7 +138,7 @@ contract ETFv2 is IETFv2, ETFv1 {//ETFv2继承自IETFv2，ETFv1
             } else {//此外其他tokens，
                 _approveToSwapRouter(tokens[i]);//先做一个approve操作
                 totalReceived += IV3SwapRouter(swapRouter).exactInput(//执行exactinput时，path里第一个是input，第二个是output，和exactinput刚好相反；通过V3swap，在这里是WETH
-                    IV3SwapRouter.ExactInputParams({传递下面的参数
+                    IV3SwapRouter.ExactInputParams({//传递下面的参数
                         path: swapPaths[i],//路径path
                         recipient: address(this),//地址当前合约的地址？
                         amountIn: tokenAmounts[i],//
@@ -170,7 +170,7 @@ contract ETFv2 is IETFv2, ETFv1 {//ETFv2继承自IETFv2，ETFv1
         uint256 totalReceived;//其他代币的接收总量
         for (uint256 i = 0; i < tokens.length; i++) {//遍历
             if (tokenAmounts[i] == 0) continue;
-            if (!_checkSwapPath(tokens[i], dstToken, swapPaths[i]))检查路径
+            if (!_checkSwapPath(tokens[i], dstToken, swapPaths[i]))//检查路径
                 revert InvalidSwapPath(swapPaths[i]);
             if (tokens[i] == dstToken) {//如果两个代币一样
                 IERC20(tokens[i]).safeTransfer(to, tokenAmounts[i]);//ERC20代币直接转给用户
